@@ -11,7 +11,7 @@
   <button onclick="send()" style="height: 20vh; width: 20vh; vertical-align: top;" >Send</button>
   <script src="peerjs.min.js"></script>
   <script>
-      const isServer = location.hash === "#host";
+      const isServer = !location.hash || location.hash === "";
       const connections = [];
 
       function log(txt, i = false) {
@@ -49,9 +49,10 @@
           const roomName = crypto.randomUUID();
           const peer = new Peer(roomName);
           peer.on('open', id => {
-              const newUrl = location.href.replace(/#host/, `#${roomName}`);
+              const newUrl = location.href + "#" + roomName;
               logi("starting server with ID: " + id);
-              logi("running at <a href='" + newUrl + "'>" + newUrl + "</a>");
+              logi("please share the following URL with your friends:");
+              logi("<a href='" + newUrl + "'>" + newUrl + "</a>");
           });
           peer.on('connection', conn => {
               logi("New connection: " + conn.peer);
