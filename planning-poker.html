@@ -1,18 +1,38 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>PeerJS Room Chat</title>
+  <title>P2P Planning Poker</title>
 </head>
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
+  input, textarea, button, select {
+    font: inherit;
+    padding: 0.5em;
+    margin: 0.5em 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f9f9f9;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  button {
+    background: #4caf50;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  button:hover {
+    background: #45a049;
+  }
 </style>
 <body>
   <div style="width: 100vw; height: 85vh; overflow: auto;" id="log"></div>
-  Username: <input id="usr" placeholder="Username" onchange="send('nick')" ><br/>
-  <select id="card" style="width: 20vw; height: 10vh;">
+  <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="send('nick')" >
+  <select id="card" style="width: 20vw; height: 8vh;">
     <option value="1">1</option>
     <option value="2">2</option>
     <option value="3">3</option>
@@ -22,53 +42,27 @@
     <option value="21">21</option>
     <option value="?">?</option>
   </select>
-  <button onclick="send('card')" style="height: 10vh; width: 20vh; vertical-align: top;" >Send</button>
-  <button onclick="send('reveal')" style="height: 10vh; width: 20vh; vertical-align: top;" >Reveal</button>
+  <button onclick="send('card')" style="height: 8vh; width: 15vh; vertical-align: top;" >Vote</button>
+  <button onclick="send('reveal')" style="height: 8vh; width: 15vh; vertical-align: top;" >Reveal</button>
+  <button onclick="send('clear')" style="height: 8vh; width: 15vh; vertical-align: top;" >Clear</button>
   <script src="peerjs.min.js"></script>
   <script>
       const isServer = !location.hash || location.hash === "";
       const connections = [];
       let msgs = [];
+      let logDiv = document.getElementById("log");
+
+      /* helper functions */
 
       function cardHTML(value) {
-          return '<a style="display: inline-block: width: auto; border: 1px solid black; border-radius: 3px; padding: 7px; margin: 7px;">' + value + '</a>'
+          return '<a style="display: inline-block; width: auto; border: 1px solid black; border-radius: 3px; padding: 7px; margin: 7px;">' + value + '</a>'
       }
 
       function log(txt, i = false) {
           console.log(txt);
-          if (typeof txt === "object") {
-              if(txt.what === "reveal") {
-                  inRound = false;
-                  log("<br/><i>Round revealed by <b>" + cleanHTML(txt.usr) + "</b></i>");
-                  for (let m of msgs) {
-                      if(m.what === "card") {
-                          log({
-                              "what": "card",
-                              "usr": m.usr,
-                              "card": m.card,
-                              "hidden": false
-                          }, i);
-                      }
-                  }
-                  msgs = [];
-                  txt = "<br/><i>Done</i>";
-              } else if (txt.what === "nick") {
-                  i = true;
-                  txt = "Nickname: <b>" + cleanHTML(txt.usr) + "</b>" 
-              } else {
-                  if (txt.hidden) {
-                      msgs.push(txt);
-                      value = "█";
-                  } else {
-                      value = cleanHTML(txt.card);
-                  }
-                  txt = "<br/>" + "<b>" + cleanHTML(txt.usr) + "</b> " + cardHTML(value);
-              }
-          }
           if (i) {
               txt = "<i>" + txt + "</i>";
           }
-          const logDiv = document.getElementById("log");
           logDiv.innerHTML += txt + "<br>";
           logDiv.scrollTop = logDiv.scrollHeight;
       }
@@ -81,6 +75,52 @@
           return new DOMParser().parseFromString(str, "text/html").body.textContent;
       }
 
+      /* main logic */
+
+      function handleReveal(data) {
+          log("<i>Round revealed by <b>" + cleanHTML(data.usr) + "</b> with " + msgs.length + " vote(s)</i>");
+          for (let m of msgs) {
+              if(m.what === "card") {
+                  handle({
+                      "what": "card",
+                      "usr": m.usr,
+                      "card": m.card,
+                      "hidden": false
+                  });
+              }
+          }
+          msgs = [];
+          return "<i>Done</i>";
+      }
+
+      function handleCard(data) {
+          if (data.hidden) {
+              msgs.push(data);
+          }
+          let value = data.hidden ? "█" : cleanHTML(data.card);
+          return "<b>" + cleanHTML(data.usr) + "</b> " + cardHTML(value);
+      }
+
+      function handle(data) {
+          console.log(data);
+          let i = false;
+          let txt = "";
+          if(data.what === "reveal") {
+              txt = handleReveal(data);
+          } else if (data.what === "nick") {
+              i = true;
+              txt = "Nickname: <b>" + cleanHTML(data.usr) + "</b>" 
+          } else if (data.what === "card") {
+              txt = handleCard(data);
+          } else if (data.what == "clear") {
+              logDiv.innerHTML = "";
+              txt = "<i>Chat cleared by <b>" + cleanHTML(data.usr) + "</b></i>";
+          }
+          log(txt, i);
+      }
+
+      /* plumbing */
+
       window.send = (what) => {
           if(!usr.value || usr.value.trim() === "") {
               alert("Please enter a username");
@@ -92,7 +132,7 @@
               "card": card.value,
               "hidden": true
           };
-          log(text);
+          handle(text);
           connections.forEach(c => c.send(text));
       };
 
@@ -102,12 +142,14 @@
           peer.on('open', id => {
               const newUrl = location.href + "#" + roomName;
               logi("please share the following URL: <a href='" + newUrl + "'>" + newUrl + "</a>");
+              logi("enter users names, wait for all users nicknames to show up, start voting.");
+              logi("when all users have voted, click 'Reveal' to see the results.;Click 'Clear' to clear the chat.");
           });
           peer.on('connection', conn => {
               logi("New connection: " + conn.peer);
               connections.push(conn);
               conn.on('data', data => {
-                  log(data);
+                  handle(data);
                   connections.forEach(c => {
                       if (c !== conn) c.send(data);
                   });
@@ -121,7 +163,7 @@
               const conn = peer.connect(roomName);
               conn.on('open', () => {
                   logi("Connected to host");
-                  conn.on('data', data => log(data));
+                  conn.on('data', data => handle(data));
                   connections.push(conn);
               });
           });
@@ -129,5 +171,4 @@
 
   </script>
 </body> 
-</html>
-
+</html> 
