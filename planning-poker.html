@@ -6,7 +6,14 @@
   <link rel="stylesheet" href="room.css">
 </head>
 <body>
-  <div style="width: 100vw; height: 85vh; overflow: auto;" id="log"></div>
+    <div style="display: flex; height: 85vh;">
+        <div id="log" style="flex: 1; overflow: auto; padding: 1em;"></div>
+        <div style="width: 200px; border-left: 1px solid #ccc; padding: 1em; overflow-y: auto;">
+            <b>Users</b><br/>
+            <div id ="users" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #ccc; padding-top: 1em; margin-top: 1em;">
+            </div>
+        </div>
+    </div>
   <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="send('nick')" >
   <select id="card" style="width: 20vw; height: 8vh;">
     <option value="1">1</option>
@@ -29,15 +36,10 @@
       /* main logic */
 
       function handleReveal(data) {
-          log("<i>Round revealed by <b>" + cleanHTML(data.usr) + "</b> with " + msgs.length + " vote(s)</i>");
+          log("<i>Round revealed by " + userHTML(data.usr) + " with " + msgs.length + " vote(s)</i>");
           for (let m of msgs) {
               if(m.what === "card") {
-                  handle({
-                      "what": "card",
-                      "usr": m.usr,
-                      "card": m.card,
-                      "hidden": false
-                  });
+                  handle({ ...m, hidden: false });
               }
           }
           msgs = [];
@@ -53,7 +55,7 @@
               msgs.push(data);
           }
           let value = data.hidden ? "█" : cleanHTML(data.card);
-          return "<b>" + cleanHTML(data.usr) + "</b> " + cardHTML(value);
+          return userHTML(data.usr) + " " + cardHTML(value);
       }
 
       function handle(data) {
@@ -64,24 +66,32 @@
               txt = handleReveal(data);
           } else if (data.what === "nick") {
               i = true;
-              txt = "Nickname: <b>" + cleanHTML(data.usr) + "</b>" 
+              txt = "Nickname: " + userHTML(data.usr)
           } else if (data.what === "card") {
               txt = handleCard(data);
           } else if (data.what == "clear") {
               logDiv.innerHTML = "";
-              txt = "<i>Chat cleared by <b>" + cleanHTML(data.usr) + "</b></i>";
+              txt = "Chat cleared by " + userHTML(data.usr);
+              i = true;
           }
           log(txt, i);
       }
 
-      function buildPayload(what) {
-          if(!usr.value || usr.value.trim() === "") {
-              alert("Please enter a username");
-              return null;
+      function onUsersUpdate(users) {
+          let usersDiv = document.getElementById("users");
+          usersDiv.innerHTML = "";
+          for (let peerId in users) {
+              if (users.hasOwnProperty(peerId)) {
+                  let user = users[peerId];
+                  usersDiv.innerHTML += "<div>" + userHTML(user) + "</div>";
+              }
           }
+      }
+
+
+      function buildPayload(what) {
           return {
               "what": what,
-              "usr": usr.value,
               "card": card.value,
               "hidden": true
           };

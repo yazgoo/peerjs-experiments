@@ -6,25 +6,45 @@
   <link rel="stylesheet" href="room.css">
 </head>
 <body>
-  <div style="width: 100vw; height: 85vh; overflow: auto;" id="log"></div>
+    <div style="display: flex; height: 85vh;">
+        <div id="log" style="flex: 1; overflow: auto; padding: 1em;"></div>
+        <div style="width: 200px; border-left: 1px solid #ccc; padding: 1em; overflow-y: auto;">
+            <b>Users</b><br/>
+            <div id ="users" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #ccc; padding-top: 1em; margin-top: 1em;">
+            </div>
+        </div>
+    </div>
   <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="send('nick')" >
-  <input id="msg" style="width: 30vw; height: 6vh;" placeholder="Message">
-  <button onclick="send('msg')" style="height: 8vh; width: 15vh; vertical-align: top;" >Send</button>
+  <input id="msg" 
+         onkeydown="if(event.key==='Enter')sendMsg()"
+         style="width: 30vw; height: 6vh;" placeholder="Message">
+  <button onclick="sendMsg()" style="height: 8vh; width: 15vh; vertical-align: top;" >Send</button>
   <button onclick="send('clear')" style="height: 8vh; width: 15vh; vertical-align: top;" >Clear</button>
   <script src="peerjs.min.js"></script>
   <script src="log.js"></script>
   <script src="room.js"></script>
   <script>
+      window.sendMsg = function() {
+          send('msg');
+          msg.value = '';
+      };
+
       function buildPayload(what) {
-          if(!usr.value || usr.value.trim() === "") {
-              alert("Please enter a username");
-              return null;
-          }
           return {
               "what": what,
-              "usr": usr.value,
               "msg": msg.value
           };
+      }
+
+      function onUsersUpdate(users) {
+          let usersDiv = document.getElementById("users");
+          usersDiv.innerHTML = "";
+          for (let peerId in users) {
+              if (users.hasOwnProperty(peerId)) {
+                  let user = users[peerId];
+                  usersDiv.innerHTML += "<div>" + userHTML(user) + "</div>";
+              }
+          }
       }
 
       function handle(data) {
@@ -35,12 +55,12 @@
               txt = handleReveal(data);
           } else if (data.what === "nick") {
               i = true;
-              txt = "Nickname: <b>" + cleanHTML(data.usr) + "</b>" 
+              txt = "Nickname: " + userHTML(data.usr)
           } else if (data.what === "msg") {
-              txt = "<b>" + cleanHTML(data.usr) + "</b> " + cleanHTML(data.msg);
+              txt = userHTML(data.usr) + " " + cleanHTML(data.msg);
           } else if (data.what == "clear") {
               clear();
-              txt = "<i>Chat cleared by <b>" + cleanHTML(data.usr) + "</b></i>";
+              txt = "<i>Chat cleared by " + userHTML(data.usr) + "</i>";
           }
           log(txt, i);
       }
