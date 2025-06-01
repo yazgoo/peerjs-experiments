@@ -50,6 +50,7 @@ if(isServer) {
 window.send = (what) => {
     if(!usr.value || usr.value.trim() === "") {
         alert("Please enter a username");
+        return;
     }
     let payload = buildPayload(what);
     if(payload !== null) {
