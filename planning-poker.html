@@ -3,32 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>P2P Planning Poker</title>
+  <link rel="stylesheet" href="room.css">
 </head>
-<style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  input, textarea, button, select {
-    font: inherit;
-    padding: 0.5em;
-    margin: 0.5em 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: #f9f9f9;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-  }
-
-  button {
-    background: #4caf50;
-    color: white;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  button:hover {
-    background: #45a049;
-  }
-</style>
 <body>
   <div style="width: 100vw; height: 85vh; overflow: auto;" id="log"></div>
   <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="send('nick')" >
@@ -46,35 +22,10 @@
   <button onclick="send('reveal')" style="height: 8vh; width: 15vh; vertical-align: top;" >Reveal</button>
   <button onclick="send('clear')" style="height: 8vh; width: 15vh; vertical-align: top;" >Clear</button>
   <script src="peerjs.min.js"></script>
+  <script src="log.js"></script>
+  <script src="room.js"></script>
   <script>
-      const isServer = !location.hash || location.hash === "";
-      const connections = [];
       let msgs = [];
-      let logDiv = document.getElementById("log");
-
-      /* helper functions */
-
-      function cardHTML(value) {
-          return '<a style="display: inline-block; width: auto; border: 1px solid black; border-radius: 3px; padding: 7px; margin: 7px;">' + value + '</a>'
-      }
-
-      function log(txt, i = false) {
-          console.log(txt);
-          if (i) {
-              txt = "<i>" + txt + "</i>";
-          }
-          logDiv.innerHTML += txt + "<br>";
-          logDiv.scrollTop = logDiv.scrollHeight;
-      }
-
-      function logi(txt) {
-          log(txt, true);
-      }
-
-      function cleanHTML(str) {
-          return new DOMParser().parseFromString(str, "text/html").body.textContent;
-      }
-
       /* main logic */
 
       function handleReveal(data) {
@@ -91,6 +42,10 @@
           }
           msgs = [];
           return "<i>Done</i>";
+      }
+
+      function cardHTML(value) {
+          return '<a style="display: inline-block; width: auto; border: 1px solid black; border-radius: 3px; padding: 7px; margin: 7px;">' + value + '</a>'
       }
 
       function handleCard(data) {
@@ -119,56 +74,18 @@
           log(txt, i);
       }
 
-      /* plumbing */
-
-      window.send = (what) => {
+      function buildPayload(what) {
           if(!usr.value || usr.value.trim() === "") {
               alert("Please enter a username");
-              return;
+              return null;
           }
-          const text = {
+          return {
               "what": what,
               "usr": usr.value,
               "card": card.value,
               "hidden": true
           };
-          handle(text);
-          connections.forEach(c => c.send(text));
-      };
-
-      if(isServer) {
-          const roomName = crypto.randomUUID();
-          const peer = new Peer(roomName);
-          peer.on('open', id => {
-              const newUrl = location.href + "#" + roomName;
-              logi("please share the following URL: <a href='" + newUrl + "'>" + newUrl + "</a>");
-              logi("enter users names, wait for all users nicknames to show up, start voting.");
-              logi("when all users have voted, click 'Reveal' to see the results.;Click 'Clear' to clear the chat.");
-          });
-          peer.on('connection', conn => {
-              logi("New connection: " + conn.peer);
-              connections.push(conn);
-              conn.on('data', data => {
-                  handle(data);
-                  connections.forEach(c => {
-                      if (c !== conn) c.send(data);
-                  });
-              });
-          });
-      } else {
-          const peer = new Peer();
-          peer.on('open', id => {
-               const roomName = location.hash.replace("#", "");
-              logi("starting client with ID: " + id);
-              const conn = peer.connect(roomName);
-              conn.on('open', () => {
-                  logi("Connected to host");
-                  conn.on('data', data => handle(data));
-                  connections.push(conn);
-              });
-          });
       }
-
   </script>
 </body> 
 </html> 

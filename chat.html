@@ -1,83 +1,49 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>PeerJS Room Chat</title>
+  <title>P2P Chat</title>
+  <link rel="stylesheet" href="room.css">
 </head>
 <body>
-  <div style="width: 100vw; height: 70vh;" id="log"></div>
-  Username: <input id="usr" placeholder="Username"><br/>
-  <textarea id="msg" style="width: 80vw; height: 20vh;" placeholder="Message"></textarea>
-  <button onclick="send()" style="height: 20vh; width: 20vh; vertical-align: top;" >Send</button>
+  <div style="width: 100vw; height: 85vh; overflow: auto;" id="log"></div>
+  <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="send('nick')" >
+  <input id="msg" style="width: 30vw; height: 6vh;" placeholder="Message">
+  <button onclick="send('msg')" style="height: 8vh; width: 15vh; vertical-align: top;" >Send</button>
+  <button onclick="send('clear')" style="height: 8vh; width: 15vh; vertical-align: top;" >Clear</button>
   <script src="peerjs.min.js"></script>
+  <script src="log.js"></script>
+  <script src="room.js"></script>
   <script>
-      const isServer = !location.hash || location.hash === "";
-      const connections = [];
-
-      function log(txt, i = false) {
-          console.log(txt);
-          if (typeof txt === "object") {
-              txt = "" + txt.time + " " + "<b>" + cleanHTML(txt.usr) + "</b>: " + cleanHTML(txt.msg);
+      function buildPayload(what) {
+          if(!usr.value || usr.value.trim() === "") {
+              alert("Please enter a username");
+              return null;
           }
-          if (i) {
-              txt = "<i>" + txt + "</i>";
-          }
-          const logDiv = document.getElementById("log");
-          logDiv.innerHTML += txt + "<br>";
-          logDiv.scrollTop = logDiv.scrollHeight;
-      }
-
-      function logi(txt) {
-          log(txt, true);
-      }
-
-      function cleanHTML(str) {
-          return new DOMParser().parseFromString(str, "text/html").body.textContent;
-      }
-
-      window.send = () => {
-          const text = {
+          return {
+              "what": what,
               "usr": usr.value,
-              "msg": msg.value,
-              "time": new Date().toLocaleTimeString()
+              "msg": msg.value
           };
-          log(text);
-          connections.forEach(c => c.send(text));
-      };
-
-      if(isServer) {
-          const roomName = crypto.randomUUID();
-          const peer = new Peer(roomName);
-          peer.on('open', id => {
-              const newUrl = location.href + "#" + roomName;
-              logi("starting server with ID: " + id);
-              logi("please share the following URL with your friends:");
-              logi("<a href='" + newUrl + "'>" + newUrl + "</a>");
-          });
-          peer.on('connection', conn => {
-              logi("New connection: " + conn.peer);
-              connections.push(conn);
-              conn.on('data', data => {
-                  log(data);
-                  connections.forEach(c => {
-                      if (c !== conn) c.send(data);
-                  });
-              });
-          });
-      } else {
-          const peer = new Peer();
-          peer.on('open', id => {
-               const roomName = location.hash.replace("#", "");
-              logi("starting client with ID: " + id);
-              const conn = peer.connect(roomName);
-              conn.on('open', () => {
-                  logi("Connected to host");
-                  conn.on('data', data => log(data));
-                  connections.push(conn);
-              });
-          });
       }
 
+      function handle(data) {
+          console.log(data);
+          let i = false;
+          let txt = "";
+          if(data.what === "reveal") {
+              txt = handleReveal(data);
+          } else if (data.what === "nick") {
+              i = true;
+              txt = "Nickname: <b>" + cleanHTML(data.usr) + "</b>" 
+          } else if (data.what === "msg") {
+              txt = "<b>" + cleanHTML(data.usr) + "</b> " + cleanHTML(data.msg);
+          } else if (data.what == "clear") {
+              clear();
+              txt = "<i>Chat cleared by <b>" + cleanHTML(data.usr) + "</b></i>";
+          }
+          log(txt, i);
+      }
   </script>
 </body> 
 </html>
