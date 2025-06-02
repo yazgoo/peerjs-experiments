@@ -9,15 +9,15 @@
     <div style="display: flex; height: 85vh;">
         <div style="flex: 1; overflow: hidden; padding: 1em;">
             <div id="log" style="flex: 1; overflow: auto; padding: 1em;height: 50%"></div>
-            <div id="table" style="border-top: 1px solid #ccc; flex: 1; justify-content: center; align-items: center; overflow: auto; padding: 1em;height: 50%; display: flex"></div>
+            <div id="table" style="border-top: 1px solid #333; flex: 1; justify-content: center; align-items: center; overflow: auto; padding: 1em;height: 50%; display: flex"></div>
         </div>
-        <div style="width: 200px; border-left: 1px solid #ccc; padding: 1em; overflow-y: auto;">
+        <div style="width: 200px; border-left: 1px solid #333; padding: 1em; overflow-y: auto;">
             <b>Users</b><br/>
-            <div id ="users" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #ccc; padding-top: 1em; margin-top: 1em;">
+            <div id ="users" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #333; padding-top: 1em; margin-top: 1em;">
             </div>
         </div>
     </div>
-    <div style="border-top: 1px solid #ccc; margin-top: 1em;">
+    <div style="border-top: 1px solid #333; margin-top: 1em;">
         <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="send('nick')" >
         <select id="card" style="width: 20vw; height: 8vh;">
             <option value="1">1</option>
@@ -55,7 +55,7 @@
       }
 
       function cardHTML(value) {
-          return '<a style="display: inline-block; width: auto; border: 1px solid black; border-radius: 3px; padding: 7px; margin: 7px;">' + value + '</a>'
+          return '<a style="display: inline-block; width: auto; border: 1px solid #333; border-radius: 3px; padding: 7px; margin: 7px;">' + value + '</a>'
       }
 
       function cardHTMLFromData(data) {
