@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <title>P2P Planning Poker</title>
   <link rel="stylesheet" href="room.css">
+  <link rel="stylesheet" href="planning-poker.css">
 </head>
-<body>
+<body onkeydown="if(event.key==='Enter')send('card')" >
     <div style="display: flex; height: 85vh;">
         <div style="flex: 1; overflow: hidden; padding: 1em;">
             <div id="log" style="flex: 1; overflow: auto; padding: 1em;height: 50%"></div>
@@ -54,13 +55,13 @@
           return "<i>Round revealed by " + userHTML(data.usr) + " with " + length + " vote(s)</i>";
       }
 
-      function cardHTML(value) {
-          return '<a style="display: inline-block; width: auto; border: 1px solid #333; border-radius: 3px; padding: 7px; margin: 7px;">' + value + '</a>'
+      function cardHTML(usr, value) {
+          return '<div class="card-out"><div class="card-in" style="background-color: ' + userColor(usr) + ';">' + value + '</div></div>';
       }
 
       function cardHTMLFromData(data) {
-          let value = data.hidden ? "█" : cleanHTML(data.card);
-          return cardHTML(value);
+          let value = data.hidden ? " " : cleanHTML(data.card);
+          return cardHTML(data.usr, value);
       }
 
       function cardHTMLWithUserFromData(data) {

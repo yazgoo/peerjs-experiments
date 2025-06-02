@@ -1,0 +1,30 @@
+.card-out {
+  display: inline-block;
+  width: auto;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 5px;
+  margin: 5px;
+  width: 40px;
+  height: 80px;
+  background-color: white;
+}
+.card-in {
+  display: inline-block;
+  width: auto;
+  border-radius: 8px;
+  font-size: 35px;
+  width: 39px;
+  height: 79px;
+  background-color: #1a73e8;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-shadow: 
+      -1px -1px 0 black,
+      1px -1px 0 black,
+      -1px  1px 0 black,
+      1px  1px 0 black;
+}
+
