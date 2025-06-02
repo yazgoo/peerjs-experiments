@@ -5,6 +5,11 @@ body {
   color: #f0f0f0;
 }
 
+a {
+  color: #1a73e8;
+  text-decoration: underline;
+}
+
 input, textarea, button, select {
   font: inherit;
   padding: 0.5em;
