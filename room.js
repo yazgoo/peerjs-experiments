@@ -14,13 +14,16 @@ function handleWithUsers(data) {
 
 /* main net logic */
 
+let url = location.href;
+
 if(isServer) {
     const roomName = crypto.randomUUID();
     const peer = new Peer(roomName);
+
     peer.on('open', id => {
         peerId = id;
-        const newUrl = location.href + "#" + roomName;
-        logi("please share the following URL: <a href='" + newUrl + "'>" + newUrl + "</a>");
+        url = url + "#" + roomName;
+        logi("please share the following URL: <a href='" + url + "'>" + url + "</a>");
     });
     peer.on('connection', conn => {
         logi("New connection: " + conn.peer);
@@ -60,3 +63,11 @@ window.send = (what) => {
         connections.forEach(c => c.send(payload));
     }
 };
+
+window.copyURL = () => {
+    navigator.clipboard.writeText(url).then(() => {
+        logi("URL copied to clipboard");
+    }).catch(err => {
+        logi("Failed to copy URL: " + err);
+    });
+}
