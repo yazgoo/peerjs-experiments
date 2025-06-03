@@ -3,16 +3,24 @@ const connections = [];
 let peerId = null;
 let users = {};
 
+function dropUser(peerId) {
+    logi("Dropping user: " + peerId + " (" + (users[peerId] || "unknown") + ")");
+    delete users[peerId];
+    onUsersUpdate(users);
+}
+
 function handleWithUsers(data) {
     handle(data);
     if(users[data.peerId] && users[data.peerId] === data.usr) {
         return;
     }
+    if(data.what === "disconnect") {
+        dropUser(data.peerId);
+        return;
+    }
     users[data.peerId] = data.usr;
     onUsersUpdate(users);
 }
-
-/* main net logic */
 
 let url = location.href;
 
@@ -34,6 +42,17 @@ if(isServer) {
                 if (c !== conn) c.send(data);
             });
         });
+        conn.on('close', () => {
+            logi("Connection closed: " + conn.peer);
+            connections.splice(connections.indexOf(conn), 1);
+            dropUser(conn.peer);
+            connections.forEach(c => {
+                c.send({
+                    what: "disconnect",
+                    peeerId: conn.peer,
+                });
+            });
+        });
     });
 } else {
     const peer = new Peer();
@@ -46,6 +65,10 @@ if(isServer) {
             logi("Connected to host");
             conn.on('data', data => handleWithUsers(data));
             connections.push(conn);
+        });
+        conn.on('close', () => {
+            logi("Connection lost with server: " + conn.peer);
+            logi("please restart a new session");
         });
     });
 }
