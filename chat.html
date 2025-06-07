@@ -14,55 +14,53 @@
             </div>
         </div>
     </div>
-  <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="send('nick')" >
+  <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="room.send('nick')" >
   <input id="msg" 
          onkeydown="if(event.key==='Enter')sendMsg()"
          style="width: 30vw; height: 6vh;" placeholder="Message">
-  <button onclick="sendMsg()" style="height: 8vh; width: 15vh; vertical-align: top;" >Send</button>
-  <button onclick="send('clear')" style="height: 8vh; width: 15vh; vertical-align: top;" >Clear</button>
+  <button onclick="sendMsg()" style="height: 8vh; width: 12vh; vertical-align: top;" >Send</button>
+  <button onclick="room.send('clear')" style="height: 8vh; width: 12vh; vertical-align: top;" >Clear</button>
+  <button onclick="copyURL()" style="height: 8vh; width: 12vh; vertical-align: top;" >Copy URL</button>
   <script src="peerjs.min.js"></script>
   <script src="log.js"></script>
   <script src="room.js"></script>
   <script>
-      window.sendMsg = function() {
-          send('msg');
-          msg.value = '';
-      };
-
-      function buildPayload(what) {
-          return {
-              "what": what,
-              "msg": msg.value
-          };
-      }
-
-      function onUsersUpdate(users) {
-          let usersDiv = document.getElementById("users");
-          usersDiv.innerHTML = "";
-          for (let peerId in users) {
-              if (users.hasOwnProperty(peerId)) {
-                  let user = users[peerId];
-                  usersDiv.innerHTML += "<div>" + userHTML(user) + "</div>";
+      const room = new Room({
+          onLog: (msg, i) => log(msg, i),
+          onUsersUpdate: (users) => updateUsers(users),
+          onMessage: (data) => {
+              console.log(data);
+              let i = false;
+              let txt = "";
+              if(data.what === "reveal") {
+                  txt = handleReveal(data);
+              } else if (data.what === "nick") {
+                  i = true;
+                  txt = "Nickname: " + userHTML(data.usr)
+              } else if (data.what === "msg") {
+                  txt = userHTML(data.usr) + " " + cleanHTML(data.msg);
+              } else if (data.what == "clear") {
+                  clear();
+                  txt = "<i>Chat cleared by " + userHTML(data.usr) + "</i>";
               }
+              log(txt, i);
+          },
+          buildPayload: (what) => {
+              return {
+                  "what": what,
+                  "msg": msg.value
+              };
+          },
+          getUsername: () => {
+              return usr.value;
           }
-      }
-
-      function handle(data) {
-          console.log(data);
-          let i = false;
-          let txt = "";
-          if(data.what === "reveal") {
-              txt = handleReveal(data);
-          } else if (data.what === "nick") {
-              i = true;
-              txt = "Nickname: " + userHTML(data.usr)
-          } else if (data.what === "msg") {
-              txt = userHTML(data.usr) + " " + cleanHTML(data.msg);
-          } else if (data.what == "clear") {
-              clear();
-              txt = "<i>Chat cleared by " + userHTML(data.usr) + "</i>";
+      });
+      room.init();
+      function sendMsg() {
+          if (msg.value.trim() !== "") {
+              room.send("msg");
+              msg.value = "";
           }
-          log(txt, i);
       }
   </script>
 </body> 
