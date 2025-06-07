@@ -39,38 +39,22 @@
   <script src="log.js"></script>
   <script src="room.js"></script>
   <script>
-      let msgs = [];
-      let tableDiv = document.getElementById("table");
+      let cards = [];
 
-      function handleReveal(data) {
-          for (let m of msgs) {
-              m.hidden = false;
-          }
-          for (let m of msgs) {
-              if(m.what === "card") {
-                  room.onMessage(m);
-              }
-          }
-          let length = msgs.length;
-          msgs = [];
-          return "<i>Round revealed by " + userHTML(data.usr) + " with " + length + " vote(s)</i>";
-      }
-
-      function cardHTMLWithUserFromData(data) {
-          let value = data.hidden ? " " : cleanHTML(data.card);
-          let cardHTML = '<div class="card-out"><div class="card-in" style="background-color: ' + userColor(data.usr) + ';">' + value + '</div></div>';
-          return '<div style="text-align: center; margin: 0 0.5em;"><div>' + cardHTML + '</div><div>' + userHTML(data.usr) + '</div></div>';
-      };
-
-      function drawAllCards(data) {
-          tableDiv.innerHTML = "";
+      function drawAllCards() {
+          table.innerHTML = "";
           let lastCardsForUsers = {};
-          for (let m of msgs) {
+          for (let m of cards) {
               lastCardsForUsers[m.peerId] = m;
           }
           for (let peerId in lastCardsForUsers) {
               if (lastCardsForUsers[peerId].what === "card") {
-                  tableDiv.innerHTML += cardHTMLWithUserFromData(lastCardsForUsers[peerId]);
+                  let data = lastCardsForUsers[peerId];
+                  let value = data.hidden ? " " : cleanHTML(data.card);
+                  let cardHTML = '<div class="card-out"><div class="card-in" style="background-color: ' 
+                      + userColor(data.usr) + ';">' + value + '</div></div>';
+                  table.innerHTML += '<div style="text-align: center; margin: 0 0.5em;"><div>' 
+                      + cardHTML + '</div><div>' + userHTML(data.usr) + '</div></div>';
               }
           }
       }
@@ -80,29 +64,30 @@
           onUsersUpdate: (users) => updateUsers(users),
           onMessage: (data) => {
               console.log(data);
-              let i = false;
               let txt = null;
               if(data.what === "reveal") {
-                  txt = handleReveal(data);
+                  for (let m of cards)
+                      m.hidden = false;
+                  let length = cards.length;
+                  txt =  "Round revealed by " + userHTML(data.usr) + " with " + cards.length + " vote(s)";
+                  drawAllCards();
+                  cards = [];
               } else if (data.what === "nick") {
-                  i = true;
                   txt = "Nickname: " + userHTML(data.usr)
               } else if (data.what === "card") {
                   if (data.hidden) {
-                      msgs.push(data);
+                      cards.push(data);
                       txt = "Received card from: " + userHTML(data.usr)
-                      i = true;
                   }
-                  drawAllCards(data);
+                  drawAllCards();
               } else if (data.what == "clear") {
                   logDiv.innerHTML = "";
-                  tableDiv.innerHTML = "";
-                  msgs = [];
+                  table.innerHTML = "";
+                  cards = [];
                   txt = "Chat and votes cleared by " + userHTML(data.usr);
-                  i = true;
               }
               if(txt !== null) {
-                  log(txt, i);
+                  log(txt, true);
               }
           },
           buildPayload: (what) => {
