@@ -48,34 +48,6 @@ class Room {
         this.logi(`Share this URL: <a href='${this.url}'>${this.url}</a>`);
     }
 
-    onClientOpen(roomName) {
-        this.logi(`Client ID: ${this.peerId}`);
-        const conn = this.peer.connect(roomName);
-        conn.on('open', () => {
-            this.logi(`Connected to host`);
-            conn.on('data', data => {
-                if( data.what === "nextServer") {
-                    this.nextServer = data.peerId;
-                } else {
-                    this.handleWithUsers(data)
-                }
-            });
-            this.connections.push(conn);
-        });
-        conn.on('close', () => {
-            this.logi(`Lost connection to host`);
-            if(this.nextServer) {
-                if(this.nextServer === this.peerId) {
-                    this.logi(`switching to server mode`);
-                    this.isServer = true;
-                    this.startServer();
-                } else {
-                    this.clientServer(this.nextServer);
-                }
-            }
-        });
-    }
-
     onConnectionOnServer(conn) {
         this.logi(`New connection: ${conn.peer}`);
         this.connections.push(conn);
@@ -96,6 +68,35 @@ class Room {
             this.connections.forEach(c => {
                 c.send({ what: "disconnect", peerId: conn.peer });
             });
+        });
+    }
+
+    onClientOpen(roomName) {
+        this.logi(`Client ID: ${this.peerId}`);
+        const conn = this.peer.connect(roomName);
+        conn.on('open', () => {
+            this.logi(`Connected to host`);
+            conn.on('data', data => {
+                if( data.what === "nextServer") {
+                    this.nextServer = data.peerId;
+                } else {
+                    this.handleWithUsers(data)
+                }
+            });
+            this.connections.push(conn);
+        });
+        conn.on('close', () => {
+            this.logi(`Lost connection to host`);
+            if(this.nextServer) {
+                this.dropUser(roomName);
+                if(this.nextServer === this.peerId) {
+                    this.logi(`switching to server mode`);
+                    this.isServer = true;
+                    this.startServer();
+                } else {
+                    this.onClientOpen(this.nextServer);
+                }
+            }
         });
     }
 
