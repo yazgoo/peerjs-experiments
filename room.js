@@ -1,11 +1,20 @@
+let Peer;
+
+if (typeof module !== 'undefined' && module.exports) {
+  Peer = require('peerjs').Peer;
+} else {
+  // Browser
+  Peer = window.Peer;
+}
 class Room {
-    constructor({ onLog, onUsersUpdate, onMessage, buildPayload, getUsername }) {
-        this.isServer = !location.hash || location.hash === "";
+    constructor({ onLog, onUsersUpdate, onMessage, buildPayload, getUsername, myLocation }) {
+        this.myLocation = myLocation || location;
+        this.isServer = !this.myLocation.hash || this.myLocation.hash === "";
         this.connections = [];
         this.users = {};
         this.peerId = null;
         this.peer = null;
-        this.url = location.href;
+        this.url = this.myLocation.href;
         this.onLog = onLog || (() => {});
         this.onUsersUpdate = onUsersUpdate || (() => {});
         this.onMessage = onMessage || (() => {});
@@ -102,6 +111,9 @@ class Room {
 
     clientServer(roomName) {
         this.peer = this.isServer ? new Peer(roomName) : new Peer();
+        this.peer.on('error', (err) => {
+            this.onLog('[Peer error]' + err);
+        });
         this.peer.on('open', id => {
             this.peerId = id;
             if (this.isServer) {
@@ -118,7 +130,7 @@ class Room {
     }
 
     init() {
-        let roomName = this.isServer ? crypto.randomUUID() : location.hash.replace("#", "");
+        let roomName = this.isServer ? crypto.randomUUID() : this.myLocation.hash.replace("#", "");
         this.clientServer(roomName);
     }
 
@@ -136,4 +148,8 @@ class Room {
         this.connections.forEach(c => c.send(payload));
     }
 
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { Room };
 }
