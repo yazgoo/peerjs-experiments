@@ -14,6 +14,12 @@ class Room {
         this.nextServer = null;
     }
 
+    copyURL() {
+        navigator.clipboard.writeText(this.url)
+            .then(() => logi("URL copied"))
+            .catch(err => logi("Copy failed: " + err));
+    }
+
     logi(msg) {
         this.onLog(msg, true);
     }

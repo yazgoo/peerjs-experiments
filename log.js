@@ -12,12 +12,6 @@ function log(txt, i = false) {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-function copyURL() {
-    navigator.clipboard.writeText(this.url)
-        .then(() => this.logi("URL copied"))
-        .catch(err => this.logi("Copy failed: " + err));
-}
-
 function updateUsers(users) {
     usersDiv.innerHTML = "";
     for (let peerId in users) {
