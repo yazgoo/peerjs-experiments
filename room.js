@@ -11,6 +11,7 @@ class Room {
         this.onMessage = onMessage || (() => {});
         this.buildPayload = buildPayload || (() => {});
         this.getUsername = getUsername || (() => {});
+        this.nextServer = null;
     }
 
     logi(msg) {
@@ -34,58 +35,84 @@ class Room {
         this.onUsersUpdate(this.users);
     }
 
-    server() {
-        const roomName = crypto.randomUUID();
-        this.peer = new Peer(roomName);
-        this.peer.on('open', id => {
-            this.peerId = id;
-            this.url += `#${roomName}`;
-            this.logi(`Share this URL: <a href='${this.url}'>${this.url}</a>`);
-        });
-        this.peer.on('connection', conn => {
-            this.logi(`New connection: ${conn.peer}`);
-            this.connections.push(conn);
+    startServer(roomName) {
+        this.logi(`Server started with ID: ${this.peerId}`);
+        this.url = this.url.replace(/#.*$/, "");
+        this.url += `#${this.peerId}`;
+        this.logi(`Share this URL: <a href='${this.url}'>${this.url}</a>`);
+    }
+
+    onClientOpen(roomName) {
+        this.logi(`Client ID: ${this.peerId}`);
+        const conn = this.peer.connect(roomName);
+        conn.on('open', () => {
+            this.logi(`Connected to host`);
             conn.on('data', data => {
-                this.handleWithUsers(data);
-                this.connections.forEach(c => {
-                    if (c !== conn) c.send(data);
-                });
+                if( data.what === "nextServer") {
+                    this.nextServer = data.peerId;
+                } else {
+                    this.handleWithUsers(data)
+                }
             });
-            conn.on('close', () => {
-                this.logi(`Connection closed: ${conn.peer}`);
-                this.connections = this.connections.filter(c => c !== conn);
-                this.dropUser(conn.peer);
-                this.connections.forEach(c => {
-                    c.send({ what: "disconnect", peerId: conn.peer });
-                });
+            this.connections.push(conn);
+        });
+        conn.on('close', () => {
+            this.logi(`Lost connection to host`);
+            if(this.nextServer) {
+                if(this.nextServer === this.peerId) {
+                    this.logi(`switching to server mode`);
+                    this.isServer = true;
+                    this.startServer();
+                } else {
+                    this.clientServer(this.nextServer);
+                }
+            }
+        });
+    }
+
+    onConnectionOnServer(conn) {
+        this.logi(`New connection: ${conn.peer}`);
+        this.connections.push(conn);
+        conn.on('data', data => {
+            this.handleWithUsers(data);
+            this.connections.forEach(c => {
+                if (c !== conn) c.send(data);
+            });
+            this.nextServer = conn.peer;
+            this.connections.forEach(c => {
+                c.send({ what: "nextServer", peerId: this.nextServer });
+            });
+        });
+        conn.on('close', () => {
+            this.logi(`Connection closed: ${conn.peer}`);
+            this.connections = this.connections.filter(c => c !== conn);
+            this.dropUser(conn.peer);
+            this.connections.forEach(c => {
+                c.send({ what: "disconnect", peerId: conn.peer });
             });
         });
     }
 
-    client() {
-        const roomName = location.hash.replace("#", "");
-        this.peer = new Peer();
+    clientServer(roomName) {
+        this.peer = this.isServer ? new Peer(roomName) : new Peer();
         this.peer.on('open', id => {
             this.peerId = id;
-            this.logi(`Client ID: ${id}`);
-            const conn = this.peer.connect(roomName);
-            conn.on('open', () => {
-                this.logi(`Connected to host`);
-                conn.on('data', data => this.handleWithUsers(data));
-                this.connections.push(conn);
-            });
-            conn.on('close', () => {
-                this.logi(`Lost connection to host`);
-            });
+            if (this.isServer) {
+                this.startServer();
+            } else {
+                this.onClientOpen(roomName);
+            }
+        });
+        this.peer.on('connection', conn => {
+            if (this.isServer) {
+                this.onConnectionOnServer(conn);
+            }
         });
     }
 
     init() {
-        if (this.isServer) {
-            this.server();
-        } else {
-            this.client();
-        }
+        let roomName = this.isServer ? crypto.randomUUID() : location.hash.replace("#", "");
+        this.clientServer(roomName);
     }
 
     send(what) {
