@@ -57,56 +57,66 @@ class Room {
         this.logi(`Share this URL: <a href='${this.url}'>${this.url}</a>`);
     }
 
-    onConnectionOnServer(conn) {
-        this.logi(`New connection: ${conn.peer}`);
-        this.connections.push(conn);
-        conn.on('data', data => {
-            this.handleWithUsers(data);
-            this.connections.forEach(c => {
-                if (c !== conn) c.send(data);
-            });
-            this.nextServer = conn.peer;
-            this.connections.forEach(c => {
-                c.send({ what: "nextServer", peerId: this.nextServer });
-            });
+    onServerConnectionData(conn, data) {
+        this.handleWithUsers(data);
+        this.connections.forEach(c => {
+            if (c !== conn) c.send(data);
         });
-        conn.on('close', () => {
+        this.nextServer = conn.peer;
+        this.connections.forEach(c => {
+            c.send({ what: "nextServer", peerId: this.nextServer });
+        });
+    }
+
+    onServerConnectionClose(conn) {
             this.logi(`Connection closed: ${conn.peer}`);
             this.connections = this.connections.filter(c => c !== conn);
             this.dropUser(conn.peer);
             this.connections.forEach(c => {
                 c.send({ what: "disconnect", peerId: conn.peer });
             });
-        });
+    }
+
+    onServerConnection(conn) {
+        this.logi(`New connection: ${conn.peer}`);
+        this.connections.push(conn);
+        conn.on('data', data => { this.onServerConnectionData(conn, data); });
+        conn.on('close', () => { this.onServerConnectionClose(conn); });
+    }
+
+    onClientConnectionData(data) {
+        if( data.what === "nextServer") {
+            this.nextServer = data.peerId;
+        } else {
+            this.handleWithUsers(data);
+        }
+    }
+
+    onClientConnectionOpen(conn) {
+        this.logi(`Connected to host`);
+        conn.on('data', data => { this.onClientConnectionData(data); });
+        this.connections.push(conn);
+    }
+
+    onClientConnectionClose(roomName) {
+        this.logi(`Lost connection to host`);
+        if(this.nextServer) {
+            this.dropUser(roomName);
+            if(this.nextServer === this.peerId) {
+                this.logi(`switching to server mode`);
+                this.isServer = true;
+                this.startServer();
+            } else {
+                this.onClientOpen(this.nextServer);
+            }
+        }
     }
 
     onClientOpen(roomName) {
         this.logi(`Client ID: ${this.peerId}`);
         const conn = this.peer.connect(roomName);
-        conn.on('open', () => {
-            this.logi(`Connected to host`);
-            conn.on('data', data => {
-                if( data.what === "nextServer") {
-                    this.nextServer = data.peerId;
-                } else {
-                    this.handleWithUsers(data)
-                }
-            });
-            this.connections.push(conn);
-        });
-        conn.on('close', () => {
-            this.logi(`Lost connection to host`);
-            if(this.nextServer) {
-                this.dropUser(roomName);
-                if(this.nextServer === this.peerId) {
-                    this.logi(`switching to server mode`);
-                    this.isServer = true;
-                    this.startServer();
-                } else {
-                    this.onClientOpen(this.nextServer);
-                }
-            }
-        });
+        conn.on('open', () => { this.onClientConnectionOpen(conn); });
+        conn.on('close', () => { this.onClientConnectionClose(roomName); });
     }
 
     clientServer(roomName) {
@@ -124,7 +134,7 @@ class Room {
         });
         this.peer.on('connection', conn => {
             if (this.isServer) {
-                this.onConnectionOnServer(conn);
+                this.onServerConnection(conn);
             }
         });
     }
