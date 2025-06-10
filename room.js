@@ -144,6 +144,11 @@ class Room {
         this.clientServer(roomName);
     }
 
+    close() {
+        this.peer.destroy();
+    }
+
+
     send(what) {
         let usr = this.getUsername();
         if (!usr || usr.trim() === "") {

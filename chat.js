@@ -19,6 +19,15 @@ const { Room } = require('./room'); // your adapted room.js
 
 const blessed = require('blessed');
 
+function userColor(user) {
+    // generate a color based on the username
+    let hash = 0;
+    for (let i = 0; i < user.length; i++) {
+        hash = user.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return '#' + ((hash & 0x00FFFFFF).toString(16).padStart(6, '0'));
+}
+
 // Create screen
 const screen = blessed.screen({
   smartCSR: true,
@@ -35,7 +44,13 @@ const chatBox = blessed.box({
   scrollable: true,
   alwaysScroll: true,
   scrollbar: { style: { bg: 'white' } },
-  border: { type: 'line' },
+  border: { 
+    type: 'line',
+    bottom: true,
+    left: false,
+    right: false,
+    top: false,
+  },
 });
 
 const usersBox = blessed.box({
@@ -47,17 +62,22 @@ const usersBox = blessed.box({
   scrollable: true,
   alwaysScroll: true,
   scrollbar: { style: { bg: 'white' } },
-  border: { type: 'line' },
+  border: { 
+    type: 'line',
+    bottom: false,
+    left: true,
+    right: false,
+    top: false,
+  },
 });
 
 // Input box
 const input = blessed.textbox({
   bottom: 0,
-  left: 0,
+  left: 2,
   height: '10%',
   width: '100%',
   inputOnFocus: true,
-  border: { type: 'line' },
 });
 
 // Append and render
@@ -90,7 +110,7 @@ const room = new Room({
   onUsersUpdate: (users) => {
     usersBox.setContent('Users:\n');
     for (let peerId in users) {
-      usersBox.pushLine('- ' + users[peerId]);
+      usersBox.pushLine('- ' + `{${userColor(users[peerId])}-fg}${users[peerId]}{/}`);
     }
     screen.render();
   },
@@ -100,7 +120,7 @@ const room = new Room({
     } else if (data.what === 'nick') {
       logLine(`Nickname: ${data.usr}`);
     } else if (data.what === 'msg') {
-      logLine(`${data.usr}: ${data.msg}`);
+      logLine(`{${userColor(data.usr)}-fg}${data.usr}{/}: ${data.msg}`);
     } else if (data.what === 'clear') {
       chatBox.setContent('');
     }
@@ -130,12 +150,11 @@ function handleInput(text) {
   } else if (text.startsWith('/nick ')) {
     username = text.split(' ')[1];
     room.send('nick');
-  } else if (text === '/users') {
-    room.onUsersUpdate(room.users);
   } else if (text === '/quit') {
     room.send('disconnect');
     logLine('You have left the chat.');
     screen.render();
+    room.close();
     process.exit(0);
   } else {
     lastMsg = text;
