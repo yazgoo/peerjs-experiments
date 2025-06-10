@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "blessed": "^0.1.81",
     "node-pre-gyp": "^0.17.0",
     "peerjs": "^1.5.5",
     "wrtc": "^0.4.7",

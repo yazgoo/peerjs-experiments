@@ -13,72 +13,142 @@ global.RTCSessionDescription = wrtc.RTCSessionDescription;
 global.RTCIceCandidate = wrtc.RTCIceCandidate;
 global.WebSocket = require('ws');
 
+global.window = {}; // fake window for PeerJS
 const { Peer } = require('peerjs');
-const readline = require('readline');
-global.window = {}; // basic fake window
-const { Room } = require('./room'); // assumes you adapt room.js for Node
+const { Room } = require('./room'); // your adapted room.js
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
+const blessed = require('blessed');
+
+// Create screen
+const screen = blessed.screen({
+  smartCSR: true,
+  title: 'P2P Chat',
 });
+
+// Chat box
+const chatBox = blessed.box({
+  top: 0,
+  left: 0,
+  width: '85%',
+  height: '90%',
+  tags: true,
+  scrollable: true,
+  alwaysScroll: true,
+  scrollbar: { style: { bg: 'white' } },
+  border: { type: 'line' },
+});
+
+const usersBox = blessed.box({
+  top: 0,
+  right: 0,
+  width: '15%',
+  height: '90%',
+  tags: true,
+  scrollable: true,
+  alwaysScroll: true,
+  scrollbar: { style: { bg: 'white' } },
+  border: { type: 'line' },
+});
+
+// Input box
+const input = blessed.textbox({
+  bottom: 0,
+  left: 0,
+  height: '10%',
+  width: '100%',
+  inputOnFocus: true,
+  border: { type: 'line' },
+});
+
+// Append and render
+screen.append(chatBox);
+screen.append(usersBox);
+screen.append(input);
+input.focus();
+screen.render();
 
 let username = 'anon';
 
-const room = new Room({
-  onLog: (msg) => console.log(msg),
-  onUsersUpdate: (users) => {
-    console.log('\n[Users]');
-    for (let peerId in users) {
-        let u = users[peerId];
-        console.log('- ' + u);
-    }
-  },
-  onMessage: (data) => {
-    let txt = '';
-    if (data.what === 'reveal') {
-      txt = '[Reveal] ' + JSON.stringify(data); // implement handleReveal if needed
-    } else if (data.what === 'nick') {
-      txt = `Nickname: ${data.usr}`;
-    } else if (data.what === 'msg') {
-      txt = `${data.usr}: ${data.msg}`;
-    } else if (data.what === 'clear') {
-      console.clear();
-      txt = `* Chat cleared by ${data.usr}`;
-    }
-    console.log(txt);
-  },
-  buildPayload: (what) => {
-    return {
-      what,
-      msg: lastMsg
-    };
-  },
-  getUsername: () => username,
-  myLocation: new URL('http://localhost:3000')
-});
+if (process.argv.length <= 2) {
+  logLine('Usage: node chat.js <username> [hash]');
+  logLine('Example: node chat.js myUserName');
+  logLine('Example: node chat.js myUserName myHash');
+  process.exit(1);
+}
+
+username = process.argv[2].trim();
 
 let lastMsg = '';
+let myLocation = new URL('http://localhost:3000');
+if (process.argv.length > 3) {
+  const hash = process.argv[3];
+  myLocation = new URL(myLocation.href + "#" + hash);
+}
+
+const room = new Room({
+  onLog: (msg) => logLine(`[log] ${msg}`),
+  onUsersUpdate: (users) => {
+    usersBox.setContent('Users:\n');
+    for (let peerId in users) {
+      usersBox.pushLine('- ' + users[peerId]);
+    }
+    screen.render();
+  },
+  onMessage: (data) => {
+    if (data.what === 'reveal') {
+      logLine('[Reveal] ' + JSON.stringify(data));
+    } else if (data.what === 'nick') {
+      logLine(`Nickname: ${data.usr}`);
+    } else if (data.what === 'msg') {
+      logLine(`${data.usr}: ${data.msg}`);
+    } else if (data.what === 'clear') {
+      chatBox.setContent('');
+    }
+    screen.render();
+  },
+  buildPayload: (what) => ({
+    what,
+    msg: lastMsg,
+  }),
+  getUsername: () => username,
+  myLocation: myLocation,
+});
 
 room.init();
 
-rl.question('Enter your username: ', (name) => {
-  username = name || 'anon';
-  room.send('nick');
-  prompt();
+function logLine(text) {
+  chatBox.pushLine(text);
+  chatBox.setScrollPerc(100);
+  screen.render();
+}
+
+function handleInput(text) {
+  if (!text) return;
+
+  if (text === '/clear') {
+    room.send('clear');
+  } else if (text.startsWith('/nick ')) {
+    username = text.split(' ')[1];
+    room.send('nick');
+  } else if (text === '/users') {
+    room.onUsersUpdate(room.users);
+  } else if (text === '/quit') {
+    room.send('disconnect');
+    logLine('You have left the chat.');
+    screen.render();
+    process.exit(0);
+  } else {
+    lastMsg = text;
+    room.send('msg');
+  }
+}
+
+input.on('submit', (text) => {
+  handleInput(text.trim());
+  input.clearValue();
+  screen.render();
+  input.focus();
 });
 
-function prompt() {
-  rl.question('', (input) => {
-    if (input === '/clear') {
-      room.send('clear');
-    } else if (input.startsWith('/nick ')) {
-      username = input.split(' ')[1];
-      room.send('nick');
-    } else {
-      lastMsg = input;
-      room.send('msg');
-    }
-    prompt();
-  });
-}
+// Exit keys  
+screen.key(['C-c', 'q', 'escape'], () => process.exit(0));
