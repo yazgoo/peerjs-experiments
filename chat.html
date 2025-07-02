@@ -7,10 +7,10 @@
 </head>
 <body>
     <div style="display: flex; height: 85vh;">
-        <div id="log" style="flex: 1; overflow: auto; padding: 1em;"></div>
+        <div id="logBox" style="flex: 1; overflow: auto; padding: 1em;"></div>
         <div style="width: 200px; border-left: 1px solid #ccc; padding: 1em; overflow-y: auto;">
             <b>Users</b><br/>
-            <div id ="users" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #ccc; padding-top: 1em; margin-top: 1em;">
+            <div id ="usersBox" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #ccc; padding-top: 1em; margin-top: 1em;">
             </div>
         </div>
     </div>
@@ -25,25 +25,24 @@
   <script src="log.js"></script>
   <script src="room.js"></script>
   <script>
+      const log = new Log();
       const room = new Room({
-          onLog: (msg, i) => log(msg, i),
-          onUsersUpdate: (users) => updateUsers(users),
+          onLog: (msg, i) => log.log(msg, i),
+          onUsersUpdate: (users) => log.updateUsers(users),
           onMessage: (data) => {
               console.log(data);
               let i = false;
               let txt = "";
-              if(data.what === "reveal") {
-                  txt = handleReveal(data);
-              } else if (data.what === "nick") {
+              if (data.what === "nick") {
                   i = true;
-                  txt = "Nickname: " + userHTML(data.usr)
+                  txt = "Nickname: " + log.userHTML(data.usr)
               } else if (data.what === "msg") {
-                  txt = userHTML(data.usr) + " " + cleanHTML(data.msg);
+                  txt = log.userHTML(data.usr) + " " + log.cleanHTML(data.msg);
               } else if (data.what == "clear") {
-                  clear();
-                  txt = "<i>Chat cleared by " + userHTML(data.usr) + "</i>";
+                  log.clear();
+                  txt = "<i>Chat cleared by " + log.userHTML(data.usr) + "</i>";
               }
-              log(txt, i);
+              log.log(txt, i);
           },
           buildPayload: (what) => {
               return {

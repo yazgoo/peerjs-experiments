@@ -15,26 +15,18 @@ global.WebSocket = require('ws');
 
 global.window = {}; // fake window for PeerJS
 const { Peer } = require('peerjs');
-const { Room } = require('./room'); // your adapted room.js
+const { Room } = require('./room');
+const { Log } = require('./log');
 
 const blessed = require('blessed');
 
-function userColor(user) {
-    // generate a color based on the username
-    let hash = 0;
-    for (let i = 0; i < user.length; i++) {
-        hash = user.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return '#' + ((hash & 0x00FFFFFF).toString(16).padStart(6, '0'));
-}
 
-// Create screen
+
 const screen = blessed.screen({
   smartCSR: true,
   title: 'P2P Chat',
 });
 
-// Chat box
 const chatBox = blessed.box({
   top: 0,
   left: 0,
@@ -57,7 +49,7 @@ const usersBox = blessed.box({
   top: 0,
   right: 0,
   width: '15%',
-  height: '90%',
+  height: '89%',
   tags: true,
   scrollable: true,
   alwaysScroll: true,
@@ -71,7 +63,6 @@ const usersBox = blessed.box({
   },
 });
 
-// Input box
 const input = blessed.textbox({
   bottom: 0,
   left: 2,
@@ -105,22 +96,22 @@ if (process.argv.length > 3) {
   myLocation = new URL(myLocation.href + "#" + hash);
 }
 
+const log = new Log();
+
 const room = new Room({
   onLog: (msg) => logLine(`[log] ${msg}`),
   onUsersUpdate: (users) => {
     usersBox.setContent('Users:\n');
     for (let peerId in users) {
-      usersBox.pushLine('- ' + `{${userColor(users[peerId])}-fg}${users[peerId]}{/}`);
+      usersBox.pushLine('- ' + `{${log.userColor(users[peerId])}-fg}${users[peerId]}{/}`);
     }
     screen.render();
   },
   onMessage: (data) => {
-    if (data.what === 'reveal') {
-      logLine('[Reveal] ' + JSON.stringify(data));
-    } else if (data.what === 'nick') {
+    if (data.what === 'nick') {
       logLine(`Nickname: ${data.usr}`);
     } else if (data.what === 'msg') {
-      logLine(`{${userColor(data.usr)}-fg}${data.usr}{/}: ${data.msg}`);
+      logLine(`{${log.userColor(data.usr)}-fg}${data.usr}{/}: ${data.msg}`);
     } else if (data.what === 'clear') {
       chatBox.setContent('');
     }

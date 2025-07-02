@@ -1,48 +1,51 @@
-const logDiv = document.getElementById("log");
-const usersDiv = document.getElementById("users");
+class Log {
 
-/* helper functions */
-
-function log(txt, i = false) {
-    console.log(txt);
-    if (i) {
-        txt = "<i>" + txt + "</i>";
+    log(txt, i = false) {
+        console.log(txt);
+        if (i) {
+            txt = "<i>" + txt + "</i>";
+        }
+        logBox.innerHTML += txt + "<br>";
+        logBox.scrollTop = logBox.scrollHeight;
     }
-    logDiv.innerHTML += txt + "<br>";
-    logDiv.scrollTop = logDiv.scrollHeight;
-}
 
-function updateUsers(users) {
-    usersDiv.innerHTML = "";
-    for (let peerId in users) {
-        if (users.hasOwnProperty(peerId)) {
-            let user = users[peerId];
-            usersDiv.innerHTML += "<div>" + userHTML(user) + "</div>";
+    updateUsers(users) {
+        usersBox.innerHTML = "";
+        for (let peerId in users) {
+            if (users.hasOwnProperty(peerId)) {
+                let user = users[peerId];
+                usersBox.innerHTML += "<div>" + this.userHTML(user) + "</div>";
+            }
         }
     }
-}
 
-function logi(txt) {
-    log(txt, true);
-}
-
-function clear() {
-    logDiv.innerHTML = "";
-}
-
-function cleanHTML(str) {
-    return new DOMParser().parseFromString(str, "text/html").body.textContent;
-}
-
-function userColor(user) {
-    // generate a color based on the username
-    let hash = 0;
-    for (let i = 0; i < user.length; i++) {
-        hash = user.charCodeAt(i) + ((hash << 5) - hash);
+    logi(txt) {
+        this.log(txt, true);
     }
-    return '#' + ((hash & 0x00FFFFFF).toString(16).padStart(6, '0'));
+
+    clear() {
+        logBox.innerHTML = "";
+    }
+
+    cleanHTML(str) {
+        return new DOMParser().parseFromString(str, "text/html").body.textContent;
+    }
+
+    userColor(user) {
+        // generate a color based on the username
+        let hash = 0;
+        for (let i = 0; i < user.length; i++) {
+            hash = user.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return '#' + ((hash & 0x00FFFFFF).toString(16).padStart(6, '0'));
+    }
+
+    userHTML(user) {
+        return '<span style="font-weight: bold; color: ' + this.userColor(user) + ';">' + this.cleanHTML(user) + '</span>';
+    }
 }
 
-function userHTML(user) {
-    return '<span style="font-weight: bold; color: ' + userColor(user) + ';">' + cleanHTML(user) + '</span>';
+
+if (typeof module !== 'undefined') {
+  module.exports = { Log };
 }
