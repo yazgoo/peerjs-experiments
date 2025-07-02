@@ -43,7 +43,7 @@ select {
  height: 8vh;
 }
 
-.main {
+main {
   display: flex;
   height: 85vh;
 }
@@ -63,7 +63,7 @@ select {
   margin-top: 1em;
 }
 
-.rightColumn {
+aside {
   width: 200px;
   border-left: 1px solid #333;
   padding: 1em;
@@ -72,10 +72,9 @@ select {
 
 #usr {
   width: 20vw;
-  height: 6vh;
 }
 
-.bottom {
+footer {
   border-top: 1px solid #333;
   margin-top: 1em;
 }

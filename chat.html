@@ -6,15 +6,15 @@
   <link rel="stylesheet" href="room.css">
 </head>
 <body>
-    <div class="main">
+    <main>
         <div id="logBox"></div>
-        <div class="rightColumn">
+        <aside>
             <b>Users</b><br/>
             <div id ="usersBox">
             </div>
-        </div>
-    </div>
-    <div class="bottom">
+        </aside>
+    </main>
+    <footer>
         <span class="buttons">
             <input id="usr" placeholder="Username" onchange="room.send('nick')" >
             <input id="msg" 
@@ -24,7 +24,7 @@
             <button onclick="room.send('clear')" >Clear</button>
             <button onclick="room.copyURL()" >Copy URL</button>
         </span>
-    </div>
+    </footer>
   <script src="peerjs.min.js"></script>
   <script src="log.js"></script>
   <script src="room.js"></script>

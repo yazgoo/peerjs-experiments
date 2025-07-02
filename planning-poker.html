@@ -7,20 +7,19 @@
   <link rel="stylesheet" href="planning-poker.css">
 </head>
 <body>
-    <div class="main">
-        <div class="content">
+    <main>
+        <section class="content">
             <div id="logBox"></div>
-            <div id="table" style=""></div>
-        </div>
-        <div class="rightColumn">
-            <b>Users</b><br/>
-            <div id ="usersBox">
-            </div>
-        </div>
-    </div>
-    <div class="bottom">
+            <div id="table"></div>
+        </section>
+        <aside>
+            <strong>Users</strong><br />
+            <div id="usersBox"></div>
+        </aside>
+    </main>
+    <footer>
         <span class="buttons">
-            <input id="usr" placeholder="Username" onchange="room.send('nick')" >
+            <input id="usr" placeholder="Username" onchange="room.send('nick')" />
             <select id="card">
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -36,7 +35,7 @@
             <button onclick="room.send('clear')">Clear</button>
             <button onclick="room.copyURL()">Copy URL</button>
         </span>
-    </div>
+    </footer>
   <script src="peerjs.min.js"></script>
   <script src="log.js"></script>
   <script src="room.js"></script>
