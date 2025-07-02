@@ -7,33 +7,35 @@
   <link rel="stylesheet" href="planning-poker.css">
 </head>
 <body>
-    <div style="display: flex; height: 85vh;">
-        <div style="flex: 1; overflow: hidden; padding: 1em;">
-            <div id="logBox" style="flex: 1; overflow: auto; padding: 1em;height: 50%"></div>
-            <div id="table" style="border-top: 1px solid #333; flex: 1; justify-content: center; align-items: center; overflow: auto; padding: 1em;height: 50%; display: flex"></div>
+    <div class="main">
+        <div class="content">
+            <div id="logBox"></div>
+            <div id="table" style=""></div>
         </div>
-        <div style="width: 200px; border-left: 1px solid #333; padding: 1em; overflow-y: auto;">
+        <div class="rightColumn">
             <b>Users</b><br/>
-            <div id ="usersBox" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #333; padding-top: 1em; margin-top: 1em;">
+            <div id ="usersBox">
             </div>
         </div>
     </div>
-    <div style="border-top: 1px solid #333; margin-top: 1em;">
-        <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="room.send('nick')" >
-        <select id="card" style="width: 20vw; height: 8vh;">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="5">5</option>
-            <option value="8">8</option>
-            <option value="13">13</option>
-            <option value="21">21</option>
-            <option value="?">?</option>
-        </select>
-        <button onclick="room.send('card')" style="height: 8vh; width: 11vh; vertical-align: top;" >Vote</button>
-        <button onclick="room.send('reveal')" style="height: 8vh; width: 11vh; vertical-align: top;" >Reveal</button>
-        <button onclick="room.send('clear')" style="height: 8vh; width: 11vh; vertical-align: top;" >Clear</button>
-        <button onclick="room.copyURL()" style="height: 8vh; width: 11vh; vertical-align: top;" >Copy URL</button>
+    <div class="bottom">
+        <span class="buttons">
+            <input id="usr" placeholder="Username" onchange="room.send('nick')" >
+            <select id="card">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="8">8</option>
+                <option value="13">13</option>
+                <option value="21">21</option>
+                <option value="?">?</option>
+            </select>
+            <button onclick="room.send('card')">Vote</button>
+            <button onclick="room.send('reveal')">Reveal</button>
+            <button onclick="room.send('clear')">Clear</button>
+            <button onclick="room.copyURL()">Copy URL</button>
+        </span>
     </div>
   <script src="peerjs.min.js"></script>
   <script src="log.js"></script>
@@ -51,10 +53,17 @@
               if (lastCardsForUsers[peerId].what === "card") {
                   let data = lastCardsForUsers[peerId];
                   let value = data.hidden ? " " : log.cleanHTML(data.card);
-                  let cardHTML = '<div class="card-out"><div class="card-in" style="background-color: ' 
-                      + log.userColor(data.usr) + ';">' + value + '</div></div>';
-                  table.innerHTML += '<div style="text-align: center; margin: 0 0.5em;"><div>' 
-                      + cardHTML + '</div><div>' + log.userHTML(data.usr) + '</div></div>';
+                  let cardHTML = `
+                      <div class="card-out">
+                        <div class="card-in" style="background-color: ${log.userColor(data.usr)};">
+                          ${value}
+                        </div>
+                      </div>`;
+                  table.innerHTML += `
+                      <div style="text-align: center; margin: 0 0.5em;">
+                        <div>${cardHTML}</div>
+                        <div>${log.userHTML(data.usr)}</div>
+                      </div>`;
               }
           }
       }

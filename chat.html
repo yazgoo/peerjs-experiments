@@ -6,21 +6,25 @@
   <link rel="stylesheet" href="room.css">
 </head>
 <body>
-    <div style="display: flex; height: 85vh;">
-        <div id="logBox" style="flex: 1; overflow: auto; padding: 1em;"></div>
-        <div style="width: 200px; border-left: 1px solid #ccc; padding: 1em; overflow-y: auto;">
+    <div class="main">
+        <div id="logBox"></div>
+        <div class="rightColumn">
             <b>Users</b><br/>
-            <div id ="usersBox" style="max-height: 80vh; overflow-y: auto; border-top: 1px solid #ccc; padding-top: 1em; margin-top: 1em;">
+            <div id ="usersBox">
             </div>
         </div>
     </div>
-  <input id="usr" style="width: 20vw; height: 6vh;" placeholder="Username" onchange="room.send('nick')" >
-  <input id="msg" 
-         onkeydown="if(event.key==='Enter')sendMsg()"
-         style="width: 30vw; height: 6vh;" placeholder="Message">
-  <button onclick="sendMsg()" style="height: 8vh; width: 12vh; vertical-align: top;" >Send</button>
-  <button onclick="room.send('clear')" style="height: 8vh; width: 12vh; vertical-align: top;" >Clear</button>
-  <button onclick="room.copyURL()" style="height: 8vh; width: 12vh; vertical-align: top;" >Copy URL</button>
+    <div class="bottom">
+        <span class="buttons">
+            <input id="usr" placeholder="Username" onchange="room.send('nick')" >
+            <input id="msg" 
+                   onkeydown="if(event.key==='Enter')sendMsg()"
+                   placeholder="Message">
+            <button onclick="sendMsg()" >Send</button>
+            <button onclick="room.send('clear')" >Clear</button>
+            <button onclick="room.copyURL()" >Copy URL</button>
+        </span>
+    </div>
   <script src="peerjs.min.js"></script>
   <script src="log.js"></script>
   <script src="room.js"></script>
