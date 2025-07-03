@@ -48,9 +48,11 @@
           for (let m of cards) {
               lastCardsForUsers[m.peerId] = m;
           }
+          let txt = "";
           for (let peerId in lastCardsForUsers) {
               if (lastCardsForUsers[peerId].what === "card") {
                   let data = lastCardsForUsers[peerId];
+                  txt += log.userHTML(data.usr) + ": " + data.card + ", ";
                   let value = data.hidden ? " " : log.cleanHTML(data.card);
                   let cardHTML = `
                       <div class="card-out">
@@ -65,6 +67,7 @@
                       </div>`;
               }
           }
+          return txt;
       }
 
       const log = new Log();
@@ -79,8 +82,8 @@
                   for (let m of cards)
                       m.hidden = false;
                   let length = cards.length;
-                  txt =  "Round revealed by " + log.userHTML(data.usr) + " with " + cards.length + " vote(s)";
-                  drawAllCards();
+                  txt =  "Round revealed by " + log.userHTML(data.usr) + " with " + cards.length + " vote(s): ";
+                  txt += drawAllCards();
                   cards = [];
               } else if (data.what === "nick") {
                   txt = "Nickname: " + log.userHTML(data.usr)
@@ -107,7 +110,14 @@
                   "hidden": true
               };
           },
-          getUsername: () => usr.value
+          getUsername: () => usr.value,
+          onNewClient: (conn) => {
+              for (let m of cards) {
+                  if (m.what === "card") {
+                      conn.send(m);
+                  }
+              }
+          },
       });
       room.init();
 

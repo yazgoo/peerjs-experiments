@@ -7,7 +7,7 @@ if (typeof module !== 'undefined' && module.exports) {
   Peer = window.Peer;
 }
 class Room {
-    constructor({ onLog, onUsersUpdate, onMessage, buildPayload, getUsername, myLocation }) {
+    constructor({ onLog, onUsersUpdate, onMessage, buildPayload, getUsername, myLocation, onNewClient = (conn) => {} }) {
         this.myLocation = myLocation || location;
         this.isServer = !this.myLocation.hash || this.myLocation.hash === "";
         this.connections = [];
@@ -21,6 +21,7 @@ class Room {
         this.buildPayload = buildPayload || (() => {});
         this.getUsername = getUsername || (() => {});
         this.nextServer = null;
+        this.onNewClient = onNewClient || (() => {});
     }
 
     copyURL() {
@@ -57,15 +58,27 @@ class Room {
         this.logi(`Share this URL: <a href='${this.url}'>${this.url}</a>`);
     }
 
+    onServerNewClient(conn) {
+        for (let peerId in this.users) {
+            this.logi(`Sending user ${peerId} (${this.users[peerId]}) to ${conn.peer}`);
+            conn.send({ what: "nick", peerId, usr: this.users[peerId] });
+        }
+        this.onNewClient(conn);
+    }
+
     onServerConnectionData(conn, data) {
-        this.handleWithUsers(data);
-        this.connections.forEach(c => {
-            if (c !== conn) c.send(data);
-        });
-        this.nextServer = conn.peer;
-        this.connections.forEach(c => {
-            c.send({ what: "nextServer", peerId: this.nextServer });
-        });
+        if (data.what === "client-ready") {
+            this.onServerNewClient(conn);
+        } else {
+            this.handleWithUsers(data);
+            this.connections.forEach(c => {
+                if (c !== conn) c.send(data);
+            });
+            this.nextServer = conn.peer;
+            this.connections.forEach(c => {
+                c.send({ what: "nextServer", peerId: this.nextServer });
+            });
+        }
     }
 
     onServerConnectionClose(conn) {
@@ -96,6 +109,7 @@ class Room {
         this.logi(`Connected to host`);
         conn.on('data', data => { this.onClientConnectionData(data); });
         this.connections.push(conn);
+        conn.send({ what: "client-ready" });
     }
 
     onClientConnectionClose(roomName) {
