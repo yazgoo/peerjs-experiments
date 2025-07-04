@@ -41,6 +41,7 @@
   <script src="room.js"></script>
   <script>
       let cards = [];
+      let userCount = 0;
 
       function drawAllCards() {
           table.innerHTML = "";
@@ -52,7 +53,11 @@
           for (let peerId in lastCardsForUsers) {
               if (lastCardsForUsers[peerId].what === "card") {
                   let data = lastCardsForUsers[peerId];
-                  txt += log.userHTML(data.usr) + ": " + data.card + ", ";
+                  txt += log.userHTML(data.usr)
+                  if(!data.hidden) {
+                    txt += ": " + data.card;
+                  }
+                  txt += ", ";
                   let value = data.hidden ? " " : log.cleanHTML(data.card);
                   let cardHTML = `
                       <div class="card-out">
@@ -67,6 +72,11 @@
                       </div>`;
               }
           }
+          let cardsCount = Object.keys(lastCardsForUsers).length;
+          let userCount = Object.keys(room.users).length;
+          if (cardsCount == userCount) {
+              txt += "<b>All users have voted</b>. (" + cardsCount + " votes over " + userCount + " users)";
+          }
           return txt;
       }
 
@@ -75,8 +85,7 @@
       const room = new Room({
           onLog: (msg, i) => log.log(msg, i),
           onUsersUpdate: (users) => log.updateUsers(users),
-          onMessage: (data) => {
-              console.log(data);
+          onMessage: (data) => { console.log(data);
               let txt = null;
               if(data.what === "reveal") {
                   for (let m of cards)
@@ -90,9 +99,9 @@
               } else if (data.what === "card") {
                   if (data.hidden) {
                       cards.push(data);
-                      txt = "Received card from: " + log.userHTML(data.usr)
+                      txt = "Received card from: " + log.userHTML(data.usr) + ": ";
                   }
-                  drawAllCards();
+                  txt += drawAllCards();
               } else if (data.what == "clear") {
                   logBox.innerHTML = "";
                   table.innerHTML = "";

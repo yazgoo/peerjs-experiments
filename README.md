@@ -17,3 +17,7 @@ Also, there are CLI implementations, for example:
 ```bash
 node chat.js
 ```
+
+## Screenshot
+
+![Planning Poker Screenshot](planning-poker-screenshot.png)
