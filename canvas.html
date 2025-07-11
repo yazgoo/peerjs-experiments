@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>P2P Canvas</title>
+  <link rel="stylesheet" href="room.css">
+  <link rel="stylesheet" href="planning-poker.css">
+</head>
+<body>
+    <main>
+        <section class="content">
+            <div id="logBox"></div>
+            <div id="table">
+              <canvas id="canvas" width="800" height="600"></canvas>
+            </div>
+        </section>
+        <aside>
+            <strong>Users</strong><br />
+            <div id="usersBox"></div>
+        </aside>
+    </main>
+    <footer>
+        <span class="buttons">
+            <input id="usr" placeholder="Username" onchange="room.send('nick')" />
+            <select id="card">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="8">8</option>
+                <option value="13">13</option>
+                <option value="21">21</option>
+                <option value="?">?</option>
+            </select>
+            <button onclick="room.send('card')">Vote</button>
+            <button onclick="room.send('reveal')">Reveal</button>
+            <button onclick="room.send('clear')">Clear</button>
+            <button onclick="room.copyURL()">Copy URL</button>
+        </span>
+    </footer>
+  <script src="peerjs.min.js"></script>
+  <script src="log.js"></script>
+  <script src="room.js"></script>
+  <script src="canvas.js"></script>
+  <script>
+      console.log("Initializing P2P Canvas");
+      const drawable = new Drawable(
+        document.getElementById("canvas"),
+        (lineWidth, lineCap, strokeStyle, x, y) => {
+          console.log("Drawing on drawable", lineWidth, lineCap, strokeStyle, x, y);
+          room.send("draw", { lineWidth, lineCap, strokeStyle, x, y });
+        },
+        () =>{
+          console.log("Stopped drawing on drawable");
+          room.send("stopDrawing");
+        }
+      );
+      console.log("drawable initialized");
+      const log = new Log();
+      const room = new Room({
+          onLog: (msg, i) => log.log(msg, i),
+          onUsersUpdate: (users) => log.updateUsers(users),
+          onMessage: (data) => {
+              log.log(data);
+              if (data.what === "draw") {
+                  drawable.doDraw(data.lineWidth, data.lineCap, data.strokeStyle, data.x, data.y);
+              } else if (data.what === "stopDrawing") {
+                  drawable.stopDrawing();
+              }
+          },
+          buildPayload: (what) => {
+              return {
+                  "what": what,
+              };
+          },
+          getUsername: () => {
+              return usr.value;
+          }
+      });
+      room.init();
+      function sendMsg() {
+          if (msg.value.trim() !== "") {
+              room.send("msg");
+              msg.value = "";
+          }
+      }
+  </script>
+</body> 
+</html> 
+

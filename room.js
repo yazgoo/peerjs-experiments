@@ -163,7 +163,7 @@ class Room {
     }
 
 
-    send(what) {
+    send(what, additionalData = {}) {
         let usr = this.getUsername();
         if (!usr || usr.trim() === "") {
             alert("Please enter a username");
@@ -171,6 +171,10 @@ class Room {
         }
         let payload = this.buildPayload(what);
         if (!payload) return;
+        // add addistional data fields to payload
+        for (let key in additionalData) {
+            payload[key] = additionalData[key];
+        }
         payload.peerId = this.peerId;
         payload.usr = usr;
         this.handleWithUsers(payload);
